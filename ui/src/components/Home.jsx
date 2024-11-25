@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { SERVER_URL } from "../constants";
 
 const FileUpload = () => {
 	const [file, setFile] = useState(null);
@@ -33,7 +34,7 @@ const FileUpload = () => {
 			setIsSubmitting(true);
 			setError("");
 
-			const res = await fetch("http://localhost:5000/upload", {
+			const res = await fetch(`${SERVER_URL}/upload`, {
 				method: "POST",
 				body: formData,
 			});

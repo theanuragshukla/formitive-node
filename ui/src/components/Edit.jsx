@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { pdfjs, Document, Page } from "react-pdf";
 import "../styles/pdf_canvas.css";
+import { SERVER_URL } from "../constants";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 	"pdfjs-dist/build/pdf.worker.min.mjs",
@@ -15,7 +16,7 @@ export default function Edit() {
 	const [data, setData] = useState(null);
 
 	useEffect(() => {
-		fetch(`http://localhost:5000/get-output/${uid}`)
+		fetch(`${SERVER_URL}/get-output/${uid}`)
 			.then((res) => res.json())
 			.then((data) => {
 				const { status, data: outputData, error } = data;
@@ -59,7 +60,7 @@ export default function Edit() {
 			{!!data && (
 				<>
 					<Document
-						file={`http://localhost:5000/uploads/${uid}`}
+						file={`${SERVER_URL}/uploads/${uid}`}
 						onLoadSuccess={onRenderSuccess}
 						renderMode="canvas"
 					>
