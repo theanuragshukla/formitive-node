@@ -1,17 +1,9 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { pdfjs, Document, Page } from "react-pdf";
-import "../styles/pdf_canvas.css";
 import { SERVER_URL } from "../constants";
-
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-	"pdfjs-dist/build/pdf.worker.min.mjs",
-	import.meta.url
-).toString();
 
 export default function Edit() {
 	const { uid } = useParams();
-	const [loading, setLoading] = useState(true);
 	const [data, setData] = useState(null);
 
 	useEffect(() => {
@@ -24,11 +16,9 @@ export default function Edit() {
 				} else {
 					console.error(error);
 				}
-				setLoading(false);
 			})
 			.catch((err) => {
 				console.error(err);
-				setLoading(false);
 			});
 	}, [uid]);
 
@@ -39,34 +29,56 @@ export default function Edit() {
 	}, [data]);
 
 	return (
-		<div>
-			{!!data && (
-				<>
-					{new Array(data.meta.pages).fill(0).map((_, i) => (
-						<div key={i} className={`border-2 border-blue-500 relative`}>
-							<img
-								src={`${SERVER_URL}/uploads/${uid}_page_${i}.jpg`}
-								width={data.meta.width}
-								height={data.meta.height}
-							/>
-							{data.fields[i].map((field, index) => (
-								<div
-									key={index}
-									className="absolute border-4 border-green-500"
+		!!data && (
+			<div className="flex flex-col gap-4 overflow-auto">
+				{new Array(data.meta.pages).fill(0).map((_, i) => (
+					<div className="grid grid-cols-[70%,30%] overflow-hidden w-full">
+						<div className="w-full overflow-auto">
+							<div
+								key={i}
+								style={{
+									width: data.meta.width,
+									height: data.meta.height,
+								}}
+								className={`border-2 border-blue-500 relative`}
+							>
+								<img
+									src={`${SERVER_URL}/uploads/${uid}_page_${i}.jpg`}
 									style={{
-										top: field[0],
-										left: field[1],
-										width : field[2],
-										height : field[3]
+										position: "absolute",
+										top: 0,
+										left: 0,
+										width: "100%",
+										height: "100%",
 									}}
-								>
-									{field.name}
-								</div>
-							))}
+									alt="page"
+								/>
+								{data.fields[i].map((field, index) => (
+									<input
+										key={index}
+										className="absolute border-2 border-green-500"
+										style={{
+											top: field[1],
+											left: field[0],
+											width: field[2],
+											height: field[3],
+										}}
+										placeholder="Enter text"
+									/>
+								))}
+							</div>
 						</div>
-					))}
-				</>
-			)}
-		</div>
+						<div className="w-full overflow-auto">
+							{!!data?.texts &&
+								data.texts[i].map((text, index) => (
+									<text key={index} className="border-2 border-green-500 block">
+										{text}
+									</text>
+								))}
+						</div>
+					</div>
+				))}
+			</div>
+		)
 	);
 }
