@@ -71,7 +71,7 @@ export default function Edit() {
 						<div className="w-full overflow-auto">
 							{!!data?.texts &&
 								data.texts[i].map((text, index) => (
-									<text key={index} className="border-2 border-green-500 block">
+									<text key={index} className=" w-full border-2 border-green-500 block">
 										{text}
 									</text>
 								))}
