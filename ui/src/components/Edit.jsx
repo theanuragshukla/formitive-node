@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { pdfjs, Document, Page } from "react-pdf";
 import "../styles/pdf_canvas.css";
@@ -11,7 +11,6 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 
 export default function Edit() {
 	const { uid } = useParams();
-	const [isRendered, setIsRendered] = useState(false);
 	const [loading, setLoading] = useState(true);
 	const [data, setData] = useState(null);
 
@@ -33,48 +32,39 @@ export default function Edit() {
 			});
 	}, [uid]);
 
-	const canvas = useRef();
-	const ctx = canvas.current?.getContext("2d");
-
 	useEffect(() => {
-		if (!data?.meta || !ctx) return;
-		const { width, height } = data.meta;
-		if (width && height) {
-			canvas.height = height;
-			canvas.width = width;
+		if (!data?.meta) {
+			return;
 		}
-		data.fields[0].forEach((field) => {
-			const [ x, y, w, h ] = field;
-			ctx.strokeStyle = "red";
-			ctx.lineWidth = 2;
-			ctx.strokeRect(x, y, w, h);
-		});
-	}, [data, canvas, ctx]);
-
-	function onRenderSuccess() {
-		setIsRendered(true);
-	}
+	}, [data]);
 
 	return (
-		<div className="border-2 border-red-500">
+		<div>
 			{!!data && (
 				<>
-					<Document
-						file={`${SERVER_URL}/uploads/${uid}`}
-						onLoadSuccess={onRenderSuccess}
-						renderMode="canvas"
-					>
-						{new Array(data.meta?.pages).fill(0).map((_, i) => (
-							<Page
-								pageNumber={i + 1}
-								width={canvas.width}
-								height={canvas.height}
-								renderTextLayer={false}
-								key={i}
+					{new Array(data.meta.pages).fill(0).map((_, i) => (
+						<div key={i} className={`border-2 border-blue-500 relative`}>
+							<img
+								src={`${SERVER_URL}/uploads/${uid}_page_${i}.jpg`}
+								width={data.meta.width}
+								height={data.meta.height}
 							/>
-						))}
-					</Document>
-					{}
+							{data.fields[i].map((field, index) => (
+								<div
+									key={index}
+									className="absolute border-4 border-green-500"
+									style={{
+										top: field[0],
+										left: field[1],
+										width : field[2],
+										height : field[3]
+									}}
+								>
+									{field.name}
+								</div>
+							))}
+						</div>
+					))}
 				</>
 			)}
 		</div>
