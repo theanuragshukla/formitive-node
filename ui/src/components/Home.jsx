@@ -21,6 +21,24 @@ const FileUpload = () => {
 		}
 	};
 
+	const handleDrop = (e) => {
+		e.preventDefault();
+		const droppedFile = e.dataTransfer.files[0];
+		if (droppedFile) {
+			if (droppedFile.type === "application/pdf") {
+				setFile(droppedFile);
+				setError("");
+			} else {
+				setFile(null);
+				setError("Only PDF files are allowed.");
+			}
+		}
+	};
+
+	const handleDragOver = (e) => {
+		e.preventDefault();
+	};
+
 	const handleSubmit = async () => {
 		if (!file) {
 			setError("Please select a file before submitting.");
@@ -41,9 +59,7 @@ const FileUpload = () => {
 
 			if (!res.ok) {
 				const errorData = await res.json();
-				setError(
-					errorData.error || "An error occurred while uploading the file."
-				);
+				setError(errorData.error || "An error occurred while uploading the file.");
 				return;
 			}
 
@@ -61,38 +77,64 @@ const FileUpload = () => {
 		}
 	};
 
+	const handleRemoveFile = () => {
+		setFile(null);
+		setError("");
+	};
+
 	return (
-		<div className="flex flex-col items-center justify-center h-screen bg-gray-100">
-			<div className="bg-white p-6 rounded shadow-md w-80">
-				<h2 className="text-lg font-semibold mb-4">Upload a PDF File</h2>
-				<input
-					type="file"
-					accept=".pdf"
-					onChange={handleFileChange}
-					className="block w-full text-sm text-gray-600
-            file:mr-4 file:py-2 file:px-4
-            file:rounded file:border-0
-            file:text-sm file:font-semibold
-            file:bg-blue-50 file:text-blue-700
-            hover:file:bg-blue-100"
-				/>
+		<div
+			className="flex flex-col items-center justify-center h-screen bg-[#000000]"
+			onDragOver={handleDragOver}
+			onDrop={handleDrop}
+		>
+			<div className="bg-[#121212] p-6 rounded shadow-md w-80">
+				<h2 className="text-lg font-semibold mb-4 text-white">Upload a PDF File</h2>
+
+				{/* Combined File Input and Drag & Drop Area */}
+				<div
+					className="border border-gray-700 rounded p-4 mb-4 text-center hover:bg-[#252525] text-gray-300 bg-[#121212] cursor-pointer relative"
+					onDragOver={handleDragOver}
+					onDrop={handleDrop}
+					onClick={() => document.getElementById('fileInput').click()}
+				>
+					Drop PDF here or click to upload
+					<input
+						id="fileInput"
+						type="file"
+						accept=".pdf"
+						onChange={handleFileChange}
+						className="hidden"
+					/>
+				</div>
+
 				{file && (
-					<div className="mt-4 text-green-600">
-						<p>Selected File:</p>
+					<div className="mt-4 text-green-400 flex items-center">
 						<p className="truncate">{file.name}</p>
+						<button
+							onClick={handleRemoveFile}
+							className="ml-2 text-red-500"
+						>
+							&times;
+						</button>
 					</div>
 				)}
 				{error && (
-					<div className="mt-4 text-red-600">
+					<div className="mt-4 text-red-400">
 						<p>{error}</p>
 					</div>
 				)}
 				<button
 					onClick={handleSubmit}
-					disabled={isSubmitting}
+					disabled={!file || isSubmitting}
 					className={`mt-4 px-4 py-2 w-full text-white font-semibold rounded
-            ${isSubmitting ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"}
-            disabled:cursor-not-allowed`}
+            ${
+							!file
+								? "bg-[#1A1A1A] cursor-not-allowed"
+								: isSubmitting
+								? "bg-gray-600"
+								: "bg-[#252525] hover:bg-gray-700"
+						}`}
 				>
 					{isSubmitting ? "Submitting..." : "Submit"}
 				</button>

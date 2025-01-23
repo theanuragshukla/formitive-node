@@ -10,13 +10,21 @@ const Edit = () => {
 	const [jsonData, setJsonData] = useState({});
 	const [messages, setMessages] = useState([]);
 	const [inputMessage, setInputMessage] = useState("");
+	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {
-		fetch(`${SERVER_URL}/uploads/${uid}.json`).then((res) => {
-			res.json().then((data) => {
+		setLoading(true);
+		fetch(`${SERVER_URL}/uploads/${uid}.json`)
+			.then((res) => res.json())
+			.then((data) => {
 				setJsonData(data);
+			})
+			.catch((err) => {
+				console.error("Error fetching JSON data:", err);
+			})
+			.finally(() => {
+				setLoading(false);
 			});
-		});
 	}, [uid]);
 
 	useEffect(() => {
@@ -64,11 +72,29 @@ const Edit = () => {
 	};
 
 	const handleKeyDown = (e) => {
-		if (e.key === 'Enter' && !e.shiftKey) {
+		if (e.key === "Enter" && !e.shiftKey) {
 			e.preventDefault();
 			handleSubmit(e);
 		}
 	};
+
+	if (loading) {
+		return (
+			<div
+				style={{
+					display: "flex",
+					justifyContent: "center",
+					alignItems: "center",
+					height: "100vh",
+					backgroundColor: "#000",
+					color: "#fff",
+					fontSize: "1.5rem",
+				}}
+			>
+				Loading...
+			</div>
+		);
+	}
 
 	return (
 		<div style={{ display: "flex", height: "100vh" }}>
@@ -84,7 +110,7 @@ const Edit = () => {
 					height: "100%",
 				}}
 			>
-				<h2 className="underline mb-2 font-bold mx-2 text-white">Chat</h2>
+				<h2 className="underline m-2 font-bold mx-2 text-white">Chat</h2>
 
 				{/* Chat history */}
 				<div
@@ -103,7 +129,8 @@ const Edit = () => {
 							style={{
 								marginBottom: "10px",
 								padding: "8px",
-								backgroundColor: message.sender === "user" ? "#252525" : "#121212",
+								backgroundColor:
+									message.sender === "user" ? "#252525" : "#121212",
 								borderRadius: "5px",
 								maxWidth: "85%",
 								marginLeft: message.sender === "user" ? "auto" : "0",
@@ -133,7 +160,6 @@ const Edit = () => {
 							height: "100px",
 							padding: "8px",
 							borderRadius: "5px",
-							border: "1px solid #ddd",
 							resize: "none",
 							fontFamily: "inherit",
 							backgroundColor: "#252525",
