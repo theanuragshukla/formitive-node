@@ -10,10 +10,8 @@ const Edit = () => {
 	const [jsonData, setJsonData] = useState({});
 	const [messages, setMessages] = useState([]);
 	const [inputMessage, setInputMessage] = useState("");
-	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {
-		setLoading(true);
 		fetch(`${SERVER_URL}/uploads/${uid}.json`)
 			.then((res) => res.json())
 			.then((data) => {
@@ -21,9 +19,6 @@ const Edit = () => {
 			})
 			.catch((err) => {
 				console.error("Error fetching JSON data:", err);
-			})
-			.finally(() => {
-				setLoading(false);
 			});
 	}, [uid]);
 
@@ -64,11 +59,8 @@ const Edit = () => {
 		e.preventDefault();
 		if (!inputMessage.trim()) return;
 
-		// Add new message to chat history
 		setMessages([...messages, { text: inputMessage, sender: "user" }]);
 		setInputMessage("");
-
-		// Here you can add logic to process the message and make changes to the PDF
 	};
 
 	const handleKeyDown = (e) => {
@@ -78,109 +70,52 @@ const Edit = () => {
 		}
 	};
 
-	if (loading) {
-		return (
-			<div
-				style={{
-					display: "flex",
-					justifyContent: "center",
-					alignItems: "center",
-					height: "100vh",
-					backgroundColor: "#000",
-					color: "#fff",
-					fontSize: "1.5rem",
-				}}
-			>
-				Loading...
-			</div>
-		);
-	}
-
 	return (
-		<div style={{ display: "flex", height: "100vh" }}>
-			<div className="webviewer" ref={viewer} style={{ flex: 1 }}></div>
-			<div
-				style={{
-					width: "330px",
-					backgroundColor: "#000000",
-					padding: "10px",
-					boxSizing: "border-box",
-					display: "flex",
-					flexDirection: "column",
-					height: "100%",
-				}}
-			>
-				<h2 className="underline m-2 font-bold mx-2 text-white">Chat</h2>
+		<div className="flex flex-col md:flex-row h-screen w-screen max-h-screen max-w-screen overflow-hidden">
+			{/* Chat Section */}
+			<div className="order-1 md:order-2 w-full md:w-[330px] h-[30vh] md:h-screen bg-black p-2 md:p-4 flex flex-col">
+				{/* Title */}
+				<h2 className="text-sm md:text-base underline mb-1 md:mb-2 font-bold text-white">Chat</h2>
 
-				{/* Chat history */}
-				<div
-					style={{
-						flex: 1,
-						overflowY: "auto",
-						marginBottom: "10px",
-						backgroundColor: "#121212",
-						borderRadius: "5px",
-						padding: "10px",
-					}}
-				>
+				{/* Chat Messages */}
+				<div className="flex-1 overflow-y-auto bg-[#121212] rounded p-1 md:p-2 mb-1 md:mb-2">
 					{messages.map((message, index) => (
 						<div
 							key={index}
-							style={{
-								marginBottom: "10px",
-								padding: "8px",
-								backgroundColor:
-									message.sender === "user" ? "#252525" : "#121212",
-								borderRadius: "5px",
-								maxWidth: "85%",
-								marginLeft: message.sender === "user" ? "auto" : "0",
-								color: "white",
-							}}
+							className={`mb-1 p-1 md:p-2 rounded max-w-[85%] text-sm md:text-base text-white ${
+								message.sender === "user"
+									? "bg-[#252525] ml-auto"
+									: "bg-[#121212] ml-0"
+							}`}
 						>
 							{message.text}
 						</div>
 					))}
 				</div>
 
-				{/* Message input form */}
-				<form
-					onSubmit={handleSubmit}
-					style={{
-						display: "flex",
-						flexDirection: "column",
-						gap: "8px",
-					}}
-				>
+				{/* Input Form */}
+				<form onSubmit={handleSubmit} className="flex flex-col gap-1 md:gap-2">
 					<textarea
 						value={inputMessage}
 						onChange={(e) => setInputMessage(e.target.value)}
 						onKeyDown={handleKeyDown}
 						placeholder="Type your message..."
-						style={{
-							height: "100px",
-							padding: "8px",
-							borderRadius: "5px",
-							resize: "none",
-							fontFamily: "inherit",
-							backgroundColor: "#252525",
-							color: "white",
-						}}
+						className="h-16 md:h-24 p-2 text-sm md:text-base bg-[#252525] text-white rounded resize-none"
 					/>
 					<button
 						type="submit"
-						style={{
-							padding: "8px 16px",
-							backgroundColor: "#252525",
-							color: "white",
-							border: "none",
-							borderRadius: "5px",
-							cursor: "pointer",
-						}}
+						className="py-1 md:py-2 bg-[#252525] text-white rounded cursor-pointer text-sm md:text-base"
 					>
 						Send
 					</button>
 				</form>
 			</div>
+
+			{/* PDF Viewer */}
+			<div 
+				className="order-2 md:order-1 flex-1 h-[70vh] md:h-screen"
+				ref={viewer}
+			/>
 		</div>
 	);
 };
