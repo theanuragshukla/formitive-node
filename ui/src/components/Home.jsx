@@ -22,19 +22,19 @@ const FileUpload = () => {
 		}
 	};
 
-	const handleDrop = (e) => {
-		e.preventDefault();
-		const droppedFile = e.dataTransfer.files[0];
-		if (droppedFile) {
-			if (droppedFile.type === "application/pdf") {
-				setFile(droppedFile);
-				setError("");
-			} else {
-				setFile(null);
-				setError("Only PDF files are allowed.");
-			}
-		}
-	};
+	 const handleDrop = (e) => {
+	 	e.preventDefault();
+	 	const droppedFile = e.dataTransfer.files[0];
+	 	if (droppedFile) {
+	 		if (droppedFile.type === "application/pdf") {
+	 			setFile(droppedFile);
+	 			setError("");
+	 		} else {
+	 			setFile(null);
+	 			setError("Only PDF files are allowed.");
+	 		}
+	 	}
+	 };
 
 	const handleDragOver = (e) => {
 		e.preventDefault();
