@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SERVER_URL } from "../constants";
+import Nav from "./Nav";
 
 const FileUpload = () => {
 	const [file, setFile] = useState(null);
@@ -83,8 +84,10 @@ const FileUpload = () => {
 	};
 
 	return (
+		<>
+		<Nav />
 		<div
-			className="flex flex-col items-center justify-center h-screen bg-[#000000]"
+			className="flex flex-col items-center justify-center h-[calc(100vh-50px)] bg-[#000000]"
 			onDragOver={handleDragOver}
 			onDrop={handleDrop}
 		>
@@ -140,6 +143,7 @@ const FileUpload = () => {
 				</button>
 			</div>
 		</div>
+		</>
 	);
 };
 
