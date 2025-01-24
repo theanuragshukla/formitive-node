@@ -1,7 +1,0 @@
-.DocumentContainer {
-    background: tomato;
-}
-
-:host {
-    --icon-color: #00a5e4 !important;
-}
