@@ -38,7 +38,8 @@ export default function ChatBox(){
 		}
 	};
 	return (
-				<div className="order-1 md:order-2 w-full md:w-[330px] bg-black p-2 md:p-4 flex flex-col h-full relative border-l border-[#333333]">
+				<div className=" md:order-2 w-full md:w-[330px] bg-black p-2 md:p-4 flex flex-col h-full relative border-l border-[#333333]">
+			<h2>Chat</h2>
 					<div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white text-xl font-bold">
 						Coming Soon
 					</div>

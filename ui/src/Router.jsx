@@ -1,17 +1,24 @@
-import { BrowserRouter, HashRouter, Route, Routes } from "react-router-dom";
-import Home from "./components/Home";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Edit from "./components/Edit";
 import HomeLayout from "./layouts/HomeLayout";
+import Landing from "./components/Landing";
+import Contact from "./components/Contact";
+import RootLayout from "./layouts/RootLayout";
+import About from "./components/About";
 
 export default function Router() {
 	return (
-		<HashRouter>
+		<BrowserRouter>
 			<Routes>
-				<Route element={<HomeLayout />}>
-					<Route path="/" element={<Home />} />
+				<Route element={<RootLayout />}>
+					<Route element={<HomeLayout />}>
+						<Route path="/" element={<Landing />} />
+					</Route>
+					<Route path="/edit/:uid" element={<Edit />} />
+					<Route path="/contact" element={<Contact />} />
+					<Route path="/about" element={<About />} />
 				</Route>
-				<Route path="/edit/:uid" element={<Edit />} />
 			</Routes>
-		</HashRouter>
+		</BrowserRouter>
 	);
 }

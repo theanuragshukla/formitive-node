@@ -17,23 +17,23 @@ export default function HomeLayout() {
 		},
 		noClick: true,
 		noKeyboard: true,
-		multiple: false
+		multiple: false,
 	});
 	return (
-		<div {...getRootProps()} className="relative">
+		<div {...getRootProps()} className="relative flex flex-col">
 			<input {...getInputProps()} className="hidden" />
-			 {isDragActive && (
-          <div className="absolute inset-0 bg-white bg-opacity-95 rounded-lg border-2 border-dashed border-blue-400 z-10">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center">
-                <Upload className="mx-auto h-12 w-12 text-blue-500" />
-                <p className="mt-2 text-sm font-medium text-blue-600">
-                  Drop PDF here
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+			{isDragActive && (
+				<div className="absolute inset-0 bg-white bg-opacity-95 rounded-lg border-2 border-dashed border-blue-400 z-10">
+					<div className="absolute inset-0 flex items-center justify-center">
+						<div className="text-center">
+							<Upload className="mx-auto h-12 w-12 text-blue-500" />
+							<p className="mt-2 text-sm font-medium text-blue-600">
+								Drop PDF here
+							</p>
+						</div>
+					</div>
+				</div>
+			)}
 			<Outlet context={{ file, setFile }} />
 		</div>
 	);
