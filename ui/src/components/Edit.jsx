@@ -15,28 +15,52 @@ const Edit = () => {
 	const [jsonData, setJsonData] = useState({});
 	const [loading, setLoading] = useState(true);
 	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-	const {navRef} = useOutletContext()
-	const navHeight = navRef?.current?.clientHeight || 0
+	const { navRef } = useOutletContext();
+	const navHeight = navRef?.current?.clientHeight || 0;
 
 	useEffect(() => {
-		if (retry === 0 || !uid) return;
+		if (retry <= 0 || !uid) return;
 		const fetchData = async () => {
 			await sleep(2000);
 			fetch(`${SERVER_URL}/uploads/${uid}.json`)
 				.then((res) => res.json())
 				.then(async (data) => {
 					if (data.status === false) {
-						if (data.error.toString().toLowerCase().contains("failed")) {
-							alert("Failed to parse the file. Please try again.");
+						if (
+							data.error
+								.toString()
+								.toLowerCase()
+								.contains(
+									"failed"
+								)
+						) {
+							alert(
+								"Failed to parse the file. Please try again."
+							);
 							navigate("/");
-						} else if (data.error.lowerCase().contains("progress")) {
+						} else if (
+							data.error
+								.lowerCase()
+								.contains(
+									"progress"
+								)
+						) {
 							await sleep(3000);
 						} else {
-							alert("Invalid file. Please try again.");
+							alert(
+								"Invalid file. Please try again."
+							);
 							navigate("/");
 						}
 					} else {
-						if (JSON.stringify(jsonData) === JSON.stringify(data)) return;
+						if (
+							JSON.stringify(
+								jsonData
+							) ===
+							JSON.stringify(data)
+						)
+							return;
+						setRetry(0);
 						setJsonData(data);
 					}
 				})
@@ -72,7 +96,12 @@ const Edit = () => {
 	}, [jsonData, uid]);
 
 	return (
-		<div className={`relative flex flex-col md:flex-row ${navHeight && `min-h-[calc(100vh - ${navHeight}px)]`}`}>
+		<div
+			className={`relative flex flex-col md:flex-row ${
+				navHeight &&
+				`min-h-[calc(100vh - ${navHeight}px)]`
+			}`}
+		>
 			<div className="flex-1 flex relative h-screen overflow-scroll">
 				{/*right side*/}
 				<div className="flex-1 h-full relative">
@@ -81,7 +110,10 @@ const Edit = () => {
 							<div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
 						</div>
 					)}
-					<div ref={viewer} className="w-full h-full" />
+					<div
+						ref={viewer}
+						className="w-full h-full"
+					/>
 				</div>
 				{/* left side*/}
 				<div
@@ -91,18 +123,24 @@ const Edit = () => {
             bg-white
             transition-transform duration-300
             ${
-							isDrawerOpen
-								? "translate-x-0"
-								: "translate-x-full md:translate-x-0"
-						}
+			isDrawerOpen
+				? "translate-x-0"
+				: "translate-x-full md:translate-x-0"
+		}
 overflow-hidden
 max-h-screen
           `}
 				>
 					<div className="h-14 border-b flex items-center justify-between px-4 md:px-6 bg-black md:hidden">
-						<h2 className="font-medium">Chat</h2>
+						<h2 className="font-medium">
+							Chat
+						</h2>
 						<button
-							onClick={() => setIsDrawerOpen(false)}
+							onClick={() =>
+								setIsDrawerOpen(
+									false
+								)
+							}
 							className="md:hidden p-2 hover:bg-gray-100 rounded-lg"
 						>
 							<X className="w-5 h-5" />
