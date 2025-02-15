@@ -65,6 +65,7 @@ const Edit = () => {
 				initialDoc: `${SERVER_URL}/uploads/${uid}_out.pdf`,
 				enableFilePicker: false,
 				enableAnnotations: true,
+				licenseKey: "Lab06  Inc :OEM:Lab06  Inc  Web::B+:AMS(20260130):D03A73DBE75629161C5A1245EBCB10E8BDFCF12CB31D691CAFD9415282BEF5C7"
 			},
 			viewer.current
 		);
