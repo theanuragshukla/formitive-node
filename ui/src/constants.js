@@ -1,8 +1,6 @@
 export const REMOVE_BUTTONS = [
 	'saveAsButton', 'fullscreenButton', 'printButton', 'settingsButton'
 ]
-// export const SERVER_URL = "https://testserver.formitive.ai";
-// export const SERVER_URL = "https://ominous-space-guide-qgv4gr56vwr3x4vv-5000.app.github.dev";
-export const SERVER_URL = "http://localhost:5000";
-//export const SERVER_URL = "http://34.121.245.97:5000";
+export const GOOGLE_ANALYTICS_ID = process.env.REACT_APP_GOOGLE_ANALYTICS_ID;
+export const SERVER_URL = process.env.REACT_APP_SERVER_URL || 'http://localhost:5000';
  

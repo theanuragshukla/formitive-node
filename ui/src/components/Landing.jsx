@@ -1,8 +1,15 @@
 import { Sparkles, Wrench, Rocket } from "lucide-react";
+import { useEffect } from "react";
 import FileUpload from "./common/FileUpload";
 import Spacer from "./common/Spacer";
+import ReactGA from "react-ga4";
 
 const Landing = () => {
+
+	useEffect(()=>{
+		ReactGA.send({ hitType: "pageview", page: "/", title: "Landing Page" });
+	}, [])
+
 	const cards = [
 		{
 			Icon: Sparkles,

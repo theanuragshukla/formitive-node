@@ -7,6 +7,7 @@ import ChatBox from "./common/ChatBox";
 import { X, MessageSquare } from "lucide-react";
 import FeedbackPopup from "./common/FeedbackPopup";
 import { post_feedback } from "../data/managers/contact";
+import ReactGA from "react-ga4";
 
 const Edit = () => {
 	const viewer = useRef(null);
@@ -20,6 +21,10 @@ const Edit = () => {
 	const { navRef } = useOutletContext();
 	const navHeight = navRef?.current?.clientHeight || 0;
 	const [feedbackOpen, setFeedbackOpen] = useState(false);
+
+	useEffect(() => {
+		ReactGA.send({ hitType: "pageview", page: "/edit", title: "Edit Page" });
+	}, []);
 
 	useEffect(() => {
 		if (retry <= 0 || !uid) return;
@@ -81,14 +86,15 @@ const Edit = () => {
 		init();
 	}, [jsonData, uid]);
 
-	const handleDownload = async ({rating, feedback}) => {
-		const {status, msg} = await post_feedback({rating, feedback});
+	const handleDownload = async ({ rating, feedback }) => {
+		ReactGA.event({ category: "Download", action: "Click" });
+		const { status, msg } = await post_feedback({ rating, feedback });
 		if (status) {
+			ReactGA.event({ category: "Download", action: "Success" });
 			instance.UI.downloadPdf({
 				filename: `${uid}.pdf`,
-			})
-		}
-		else{
+			});
+		} else {
 			alert(msg);
 		}
 		setFeedbackOpen(false);
@@ -101,7 +107,7 @@ const Edit = () => {
 		const testFlyoutButton = {
 			dataElement: "testFlyoutButton",
 			label: "Download",
-			onClick: ()=>setFeedbackOpen(true),
+			onClick: () => setFeedbackOpen(true),
 			icon: "icon-download",
 		};
 
@@ -111,12 +117,16 @@ const Edit = () => {
 			(item) => item.dataElement === "downloadButton"
 		);
 		mainMenuFlyoutItems[downloadButtonIndex] = testFlyoutButton;
-		mainMenuFlyout.setItems(mainMenuFlyoutItems.filter((item) => !REMOVE_BUTTONS.includes(item.dataElement)));
+		mainMenuFlyout.setItems(
+			mainMenuFlyoutItems.filter(
+				(item) => !REMOVE_BUTTONS.includes(item.dataElement)
+			)
+		);
 	}, [instance]);
 
 	const handleClose = () => {
 		setFeedbackOpen(false);
-	}
+	};
 
 	return (
 		<div

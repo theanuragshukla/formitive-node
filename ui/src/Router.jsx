@@ -5,8 +5,14 @@ import Landing from "./components/Landing";
 import Contact from "./components/Contact";
 import RootLayout from "./layouts/RootLayout";
 import About from "./components/About";
+import ReactGA from "react-ga4";
+import { GOOGLE_ANALYTICS_ID } from "./constants";
+import { useEffect } from "react";
 
 export default function Router() {
+	useEffect(() => {
+		ReactGA.initialize(GOOGLE_ANALYTICS_ID);
+	}, []);
 	return (
 		<BrowserRouter>
 			<Routes>

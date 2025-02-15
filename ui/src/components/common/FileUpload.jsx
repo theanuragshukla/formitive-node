@@ -3,6 +3,7 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 import { SERVER_URL } from "../../constants";
 import { Upload } from "lucide-react";
 import Button from "./Button";
+import ReactGA from "react-ga4";
 
 const FileUpload = ({ styles }) => {
 	const { file, setFile } = useOutletContext();
@@ -11,6 +12,7 @@ const FileUpload = ({ styles }) => {
 	const navigate = useNavigate();
 
 	const handleFileChange = (e) => {
+		ReactGA.event({ category: "UploadPDF", action: "Select" });
 		const selectedFile = e.target.files[0];
 		if (selectedFile) {
 			if (selectedFile.type === "application/pdf") {
@@ -36,6 +38,10 @@ const FileUpload = ({ styles }) => {
 			setIsSubmitting(true);
 			setError("");
 
+			ReactGA.event({
+				category: "UploadPDF",
+				action: "Click",
+			});
 			const res = await fetch(`${SERVER_URL}/upload`, {
 				method: "POST",
 				body: formData,
@@ -44,7 +50,8 @@ const FileUpload = ({ styles }) => {
 			if (!res.ok) {
 				const errorData = await res.json();
 				setError(
-					errorData.error || "An error occurred while uploading the file."
+					errorData.error ||
+						"An error occurred while uploading the file."
 				);
 				return;
 			}
@@ -54,7 +61,10 @@ const FileUpload = ({ styles }) => {
 			if (status) {
 				return navigate(`edit/${data.uid}`);
 			} else {
-				setError(error || "An error occurred while uploading the file.");
+				setError(
+					error ||
+						"An error occurred while uploading the file."
+				);
 			}
 		} catch (err) {
 			setError("An error occurred while uploading the file.");
@@ -71,44 +81,56 @@ const FileUpload = ({ styles }) => {
 	return (
 		<div className={`p-4 w-full ${styles}`}>
 			<div
-				onClick={() => !file && document.getElementById("fileInput").click()}
+				onClick={() =>
+					!file &&
+					document
+						.getElementById("fileInput")
+						.click()
+				}
 				className="rounded-lg p-8 text-center cursor-pointer bg-gray-50 opacity-90"
 			>
 				{file ? (
-  <div className="flex flex-col items-center justify-center p-6 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-    <Upload className="h-12 w-12 text-gray-400" />
-    <p className="mt-2 text-sm text-gray-600 truncate max-w-xs">
-      {file.name}
-    </p>
-    <button
-      onClick={handleRemoveFile}
-      className="mt-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
-    >
-      Remove file
-    </button>
-    <input
-      id="fileInput"
-      type="file"
-      accept=".pdf"
-      onChange={handleFileChange}
-      className="hidden"
-    />
-  </div>
-) : (
-  <div className="flex flex-col items-center justify-center p-6 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-    <Upload className="h-12 w-12 text-gray-400" />
-    <p className="mt-2 text-sm text-gray-600">
-      Drop PDF here or click to upload
-    </p>
-    <input
-      id="fileInput"
-      type="file"
-      accept=".pdf"
-      onChange={handleFileChange}
-      className="hidden"
-    />
-  </div>
-)}
+					<div className="flex flex-col items-center justify-center p-6 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+						<Upload className="h-12 w-12 text-gray-400" />
+						<p className="mt-2 text-sm text-gray-600 truncate max-w-xs">
+							{file.name}
+						</p>
+						<button
+							onClick={
+								handleRemoveFile
+							}
+							className="mt-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+						>
+							Remove file
+						</button>
+						<input
+							id="fileInput"
+							type="file"
+							accept=".pdf"
+							onChange={
+								handleFileChange
+							}
+							className="hidden"
+						/>
+					</div>
+				) : (
+					<div className="flex flex-col items-center justify-center p-6 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+						<Upload className="h-12 w-12 text-gray-400" />
+						<p className="mt-2 text-sm text-gray-600">
+							Drop PDF here or click
+							to upload
+						</p>
+						<input
+							id="fileInput"
+							type="file"
+							accept=".pdf"
+							onChange={
+								handleFileChange
+							}
+							className="hidden"
+						/>
+					</div>
+				)}
 			</div>
 			{error && (
 				<div className="mt-4 text-sm text-red-600">
