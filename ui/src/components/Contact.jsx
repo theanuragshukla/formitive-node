@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FileText } from 'lucide-react';
+import { post_contact } from '../data/managers/contact';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -8,9 +9,20 @@ const Contact = () => {
     message: ''
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
+    const {status, msg} = await post_contact(formData);
+    if(status){
+      alert('Message sent successfully');
+      setFormData({
+      name: '',
+      email: '',
+      message: ''
+      });
+    }
+    else{
+      alert(msg);
+    }
   };
 
   const handleChange = (e) => {

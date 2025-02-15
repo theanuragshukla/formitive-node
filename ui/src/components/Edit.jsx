@@ -1,10 +1,12 @@
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import WebViewer from "@pdftron/webviewer";
-import { SERVER_URL } from "../constants";
+import { REMOVE_BUTTONS, SERVER_URL } from "../constants";
 import { useState, useEffect, useRef } from "react";
 import { sleep } from "../utils";
 import ChatBox from "./common/ChatBox";
 import { X, MessageSquare } from "lucide-react";
+import FeedbackPopup from "./common/FeedbackPopup";
+import { post_feedback } from "../data/managers/contact";
 
 const Edit = () => {
 	const viewer = useRef(null);
@@ -17,6 +19,7 @@ const Edit = () => {
 	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 	const { navRef } = useOutletContext();
 	const navHeight = navRef?.current?.clientHeight || 0;
+	const [feedbackOpen, setFeedbackOpen] = useState(false);
 
 	useEffect(() => {
 		if (retry <= 0 || !uid) return;
@@ -26,40 +29,17 @@ const Edit = () => {
 				.then((res) => res.json())
 				.then(async (data) => {
 					if (data.status === false) {
-						if (
-							data.error
-								.toString()
-								.toLowerCase()
-								.contains(
-									"failed"
-								)
-						) {
-							alert(
-								"Failed to parse the file. Please try again."
-							);
+						if (data.error.toString().toLowerCase().contains("failed")) {
+							alert("Failed to parse the file. Please try again.");
 							navigate("/");
-						} else if (
-							data.error
-								.lowerCase()
-								.contains(
-									"progress"
-								)
-						) {
+						} else if (data.error.lowerCase().contains("progress")) {
 							await sleep(3000);
 						} else {
-							alert(
-								"Invalid file. Please try again."
-							);
+							alert("Invalid file. Please try again.");
 							navigate("/");
 						}
 					} else {
-						if (
-							JSON.stringify(
-								jsonData
-							) ===
-							JSON.stringify(data)
-						)
-							return;
+						if (JSON.stringify(jsonData) === JSON.stringify(data)) return;
 						setRetry(0);
 						setJsonData(data);
 					}
@@ -72,36 +52,83 @@ const Edit = () => {
 		fetchData();
 	}, [uid, retry]);
 
-	useEffect(() => {
-		if (!jsonData.pages || !!instance) return;
-		setLoading(false);
-		if (jsonData.pages[0].formElements.length === 0) {
-			alert(
-				"We couldn’t find any places to add fields. You can manually add any fields and edit the PDF as needed!"
-			);
-		}
-		WebViewer(
+	const initWebViewer = async (uid) => {
+		if (!!instance) return;
+		const ins = await WebViewer(
 			{
 				path: "/webviewer/lib/public",
 				initialDoc: `${SERVER_URL}/uploads/${uid}_out.pdf`,
+				enableFilePicker: false,
+				enableAnnotations: true,
 			},
 			viewer.current
-		)
-			.then((instance) => {
-				setInstance(instance);
-				const theme = instance.UI.Theme;
-				instance.UI.setTheme(theme.DARK);
-			})
-			.finally(() => setLoading(false));
+		);
+		setInstance(ins);
+	};
+
+	useEffect(() => {
+		async function init() {
+			if (!jsonData.pages || !uid) return;
+			setLoading(false);
+			if (jsonData.pages.some((page) => page.formElements.length === 0)) {
+				alert(
+					"We couldn’t find any places to add fields. You can manually add any fields and edit the PDF as needed!"
+				);
+			}
+			await initWebViewer(uid);
+			setLoading(false);
+		}
+		init();
 	}, [jsonData, uid]);
+
+	const handleDownload = async ({rating, feedback}) => {
+		const {status, msg} = await post_feedback({rating, feedback});
+		if (status) {
+			instance.UI.downloadPdf({
+				filename: `${uid}.pdf`,
+			})
+		}
+		else{
+			alert(msg);
+		}
+		setFeedbackOpen(false);
+	};
+
+	useEffect(() => {
+		if (!instance) return;
+		const theme = instance.UI.Theme;
+		instance.UI.setTheme(theme.DARK);
+		const testFlyoutButton = {
+			dataElement: "testFlyoutButton",
+			label: "Download",
+			onClick: ()=>setFeedbackOpen(true),
+			icon: "icon-download",
+		};
+
+		const mainMenuFlyout = instance.UI.Flyouts.getFlyout("MainMenuFlyout");
+		const mainMenuFlyoutItems = mainMenuFlyout.items;
+		const downloadButtonIndex = mainMenuFlyoutItems.findIndex(
+			(item) => item.dataElement === "downloadButton"
+		);
+		mainMenuFlyoutItems[downloadButtonIndex] = testFlyoutButton;
+		mainMenuFlyout.setItems(mainMenuFlyoutItems.filter((item) => !REMOVE_BUTTONS.includes(item.dataElement)));
+	}, [instance]);
+
+	const handleClose = () => {
+		setFeedbackOpen(false);
+	}
 
 	return (
 		<div
 			className={`relative flex flex-col md:flex-row ${
-				navHeight &&
-				`min-h-[calc(100vh - ${navHeight}px)]`
+				navHeight && `min-h-[calc(100vh - ${navHeight}px)]`
 			}`}
 		>
+			<FeedbackPopup
+				onSubmit={handleDownload}
+				isOpen={feedbackOpen}
+				onClose={handleClose}
+			/>
 			<div className="flex-1 flex relative h-screen overflow-scroll">
 				{/*right side*/}
 				<div className="flex-1 h-full relative">
@@ -110,10 +137,7 @@ const Edit = () => {
 							<div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
 						</div>
 					)}
-					<div
-						ref={viewer}
-						className="w-full h-full"
-					/>
+					<div ref={viewer} className="w-full h-full" />
 				</div>
 				{/* left side*/}
 				<div
@@ -123,24 +147,18 @@ const Edit = () => {
             bg-white
             transition-transform duration-300
             ${
-			isDrawerOpen
-				? "translate-x-0"
-				: "translate-x-full md:translate-x-0"
-		}
+							isDrawerOpen
+								? "translate-x-0"
+								: "translate-x-full md:translate-x-0"
+						}
 overflow-hidden
 max-h-screen
           `}
 				>
 					<div className="h-14 border-b flex items-center justify-between px-4 md:px-6 bg-black md:hidden">
-						<h2 className="font-medium">
-							Chat
-						</h2>
+						<h2 className="font-medium">Chat</h2>
 						<button
-							onClick={() =>
-								setIsDrawerOpen(
-									false
-								)
-							}
+							onClick={() => setIsDrawerOpen(false)}
 							className="md:hidden p-2 hover:bg-gray-100 rounded-lg"
 						>
 							<X className="w-5 h-5" />
