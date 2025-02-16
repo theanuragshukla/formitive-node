@@ -49,8 +49,8 @@ const Landing = () => {
 						</p>
 					</div>
 					<div className="flex justify-center">
-						<div className="relative min-h-[300px] rounded-2xl bg-header-image mr-0 max-w-md w-full overflow-hidden shadow-lg">
-							<FileUpload styles=" absolute z-5" />
+						<div className="relative p-4 min-h-[300px] rounded-2xl bg-header-image mr-0 max-w-md w-full overflow-hidden shadow-lg">
+							<FileUpload />
 						</div>
 					</div>
 				</div>

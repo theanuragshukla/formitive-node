@@ -81,7 +81,7 @@ function Nav({ ref }) {
             {btns.map((obj) => (
               <div
                 key={obj.name}
-                className={`px-3 py-2 rounded-md text-xl font-semibold transition-all duration-200 ease-in-out ${
+                className={`px-3 py-2 rounded-md text-md font-semibold transition-all duration-200 ease-in-out ${
                   pathname?.includes(obj.name.toLowerCase())
                     ? "bg-white/30 text-white"
                     : "text-white hover:bg-white/10"
