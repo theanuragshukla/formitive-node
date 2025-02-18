@@ -90,7 +90,7 @@ const Edit = () => {
   }, [jsonData, uid]);
 
   const handleDownload = async ({ rating, feedback }) => {
-    ReactGA.event({ category: "Download", action: "Click" });
+    ReactGA.event({ category: "PDF Action", action: "Download PDF Initiate" });
     try {
       const { status, msg, data, error } = await post_feedback({
         rating,
@@ -98,7 +98,7 @@ const Edit = () => {
         uid,
       });
       if (status) {
-        ReactGA.event({ category: "Download", action: "Success" });
+        ReactGA.event({ category: "PDF Action", action: "Download PDF Success" });
         instance.UI.downloadPdf({
           filename: `${data.original_name || uid}.pdf`,
         });

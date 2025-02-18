@@ -28,7 +28,7 @@ const FileUpload = ({ styles }) => {
 	];
 
 	const handleFileChange = (e) => {
-		ReactGA.event({ category: "UploadPDF", action: "Select PDF" });
+		ReactGA.event({ category: "PDF Action", action: "Select PDF" });
 		const selectedFile = e.target.files[0];
 		if (selectedFile) {
 			if (selectedFile.type === "application/pdf") {
@@ -46,8 +46,8 @@ const FileUpload = ({ styles }) => {
 			setIsLoadingExample(true);
 			setError("");
 			ReactGA.event({
-				category: "UploadPDF",
-				action: "Select Example",
+				category: "PDF Action",
+				action: "Select Example PDF",
 				label: title,
 			});
 			const response = await fetch(`${SERVER_URL}/uploads/${encodeURIComponent(url)}`);
@@ -74,8 +74,8 @@ const FileUpload = ({ styles }) => {
 			setIsSubmitting(true);
 			setError("");
 			ReactGA.event({
-				category: "UploadPDF",
-				action: "Upload PDF",
+				category: "PDF Action",
+				action: "PDF Uploaded",
 			});
 
 			const res = await fetch(`${SERVER_URL}/upload`, {
