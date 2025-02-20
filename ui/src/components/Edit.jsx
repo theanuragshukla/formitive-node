@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import WebViewer from "@pdftron/webviewer";
 import { REMOVE_BUTTONS, SERVER_URL } from "../constants";
@@ -8,6 +8,7 @@ import { X, MessageSquare, ChevronRight, ChevronLeft } from "lucide-react";
 import FeedbackPopup from "./common/FeedbackPopup";
 import { post_feedback } from "../data/managers/contact";
 import ReactGA from "react-ga4";
+import { toast } from "react-toastify";
 
 const Edit = () => {
   const viewer = useRef(null);
@@ -23,6 +24,43 @@ const Edit = () => {
   const navHeight = navRef?.current?.clientHeight || 0;
   const [feedbackOpen, setFeedbackOpen] = useState(false);
 
+  const initWebViewer = async () => {
+    if (instance) return;
+    const id = toast("Setting up...", {
+      isLoading: true,
+      autoClose: false,
+    });
+    const ins = await WebViewer(
+      {
+        path: "/webviewer/lib/public",
+        enableFilePicker: false,
+        enableAnnotations: true,
+        licenseKey:
+          "Lab06  Inc :OEM:Lab06  Inc  Web::B+:AMS(20260130):D03A73DBE75629161C5A1245EBCB10E8BDFCF12CB31D691CAFD9415282BEF5C7",
+      },
+      viewer.current
+    );
+    toast.dismiss(id);
+
+    const { documentViewer, Annotations } = ins.Core;
+
+    documentViewer.addEventListener("documentLoaded", () => {
+      const customStyles = (widget) => {
+        if (widget instanceof Annotations.TextWidgetAnnotation) {
+          return {
+            "background-color": "rgba(100, 149, 237, 0.2)",
+          };
+        }
+      };
+      Annotations.WidgetAnnotation.getCustomStyles = customStyles;
+    });
+    setInstance(ins);
+  };
+
+  useEffect(() => {
+    initWebViewer();
+  }, []);
+
   useEffect(() => {
     setHideNav(true);
     ReactGA.send({ hitType: "pageview", page: "/edit", title: "Edit Page" });
@@ -32,11 +70,15 @@ const Edit = () => {
   useEffect(() => {
     if (retry <= 0 || !uid) return;
     const fetchData = async () => {
+      const id = toast("Processing Document...", {
+        isLoading: true,
+        autoClose: false,
+      });
       try {
         await sleep(2000);
         const res = await fetch(`${SERVER_URL}/uploads/${uid}.json`);
         const data = await res.json();
-        
+
         if (data.status === false) {
           if (data.error.toString().toLowerCase().includes("failed")) {
             alert("Failed to parse the file. Please try again.");
@@ -55,39 +97,31 @@ const Edit = () => {
         }
       } catch (err) {
         console.error(err);
-        setRetry(prev => prev - 1);
+        setRetry((prev) => prev - 1);
+      } finally {
+        toast.dismiss(id);
       }
     };
     fetchData();
   }, [uid, retry, jsonData, navigate]);
 
-  const initWebViewer = async (uid) => {
-    if (instance) return;
-    const ins = await WebViewer(
-      {
-        path: "/webviewer/lib/public",
-        initialDoc: `${SERVER_URL}/uploads/${uid}_out.pdf`,
-        enableFilePicker: false,
-        enableAnnotations: true,
-        licenseKey: "Lab06  Inc :OEM:Lab06  Inc  Web::B+:AMS(20260130):D03A73DBE75629161C5A1245EBCB10E8BDFCF12CB31D691CAFD9415282BEF5C7",
-      },
-      viewer.current
-    );
-    setInstance(ins);
+  const loadDocument = async (uid) => {
+    instance.UI.loadDocument(`${SERVER_URL}/uploads/${uid}_out.pdf`);
   };
 
   useEffect(() => {
     async function init() {
-      if (!jsonData.pages || !uid) return;
-      setLoading(false);
-      if (jsonData.pages.some(page => page.formElements.length === 0)) {
-        alert("We couldn't find any places to add fields. You can manually add any fields and edit the PDF as needed!");
+      if (!instance || !jsonData.pages || !uid) return;
+      if (jsonData.pages.some((page) => page.formElements.length === 0)) {
+        alert(
+          "We couldn't find any places to add fields. You can manually add any fields and edit the PDF as needed!"
+        );
       }
-      await initWebViewer(uid);
+      loadDocument(uid);
       setLoading(false);
     }
     init();
-  }, [jsonData, uid]);
+  }, [jsonData, uid, instance]);
 
   const handleDownload = async ({ rating, feedback }) => {
     ReactGA.event({ category: "PDF Action", action: "Download PDF Initiate" });
@@ -98,7 +132,10 @@ const Edit = () => {
         uid,
       });
       if (status) {
-        ReactGA.event({ category: "PDF Action", action: "Download PDF Success" });
+        ReactGA.event({
+          category: "PDF Action",
+          action: "Download PDF Success",
+        });
         instance.UI.downloadPdf({
           filename: `${data.original_name || uid}.pdf`,
         });
@@ -115,7 +152,14 @@ const Edit = () => {
     if (!instance) return;
     const theme = instance.UI.Theme;
     instance.UI.setTheme(theme.DARK);
-    
+
+    const HomeButton = {
+      dataElement: "homeButton",
+      label: "Home",
+      onClick: () => navigate("/"),
+      icon: "/house.svg",
+    };
+
     const downloadButton = {
       dataElement: "testFlyoutButton",
       label: "Download",
@@ -125,13 +169,21 @@ const Edit = () => {
 
     const mainMenuFlyout = instance.UI.Flyouts.getFlyout("MainMenuFlyout");
     const menuItems = mainMenuFlyout.items;
-    const downloadIndex = menuItems.findIndex(item => item.dataElement === "downloadButton");
+    const downloadIndex = menuItems.findIndex(
+      (item) => item.dataElement === "downloadButton"
+    );
     menuItems[downloadIndex] = downloadButton;
-    mainMenuFlyout.setItems(menuItems.filter(item => !REMOVE_BUTTONS.includes(item.dataElement)));
+    menuItems[0] = HomeButton;
+    mainMenuFlyout.setItems(
+      menuItems.filter((item) => !REMOVE_BUTTONS.includes(item.dataElement))
+    );
   }, [instance]);
 
   return (
-    <div className="fixed inset-0 flex flex-col" style={{ height: `calc(100vh - ${navHeight}px)`, top: navHeight }}>
+    <div
+      className="fixed inset-0 flex flex-col"
+      style={{ height: `calc(100vh - ${navHeight}px)`, top: navHeight }}
+    >
       <div className="flex-1 flex overflow-hidden">
         {/* PDF Viewer */}
         <div className="flex-1 relative">
@@ -144,27 +196,41 @@ const Edit = () => {
         </div>
 
         {/* Desktop Chat Panel */}
-        <div className={`hidden md:flex transition-all duration-300 ${isChatCollapsed ? 'w-12' : 'w-96'}`}>
+        <div
+          className={`hidden md:flex transition-all duration-300 ${
+            isChatCollapsed ? "w-12" : "w-96"
+          }`}
+        >
           <div className="flex-1 flex">
-            <button 
+            <button
               onClick={() => setIsChatCollapsed(!isChatCollapsed)}
               className="h-full w-12 flex items-center justify-center"
             >
-              {isChatCollapsed ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+              {isChatCollapsed ? (
+                <ChevronLeft className="w-5 h-5" />
+              ) : (
+                <ChevronRight className="w-5 h-5" />
+              )}
             </button>
-            
-            <div className={`flex-1 transition-all duration-300 ${isChatCollapsed ? 'w-0 opacity-0' : 'w-84 opacity-100'}`}>
+
+            <div
+              className={`flex-1 transition-all duration-300 ${
+                isChatCollapsed ? "w-0 opacity-0" : "w-84 opacity-100"
+              }`}
+            >
               {!isChatCollapsed && <ChatBox />}
             </div>
           </div>
         </div>
 
         {/* Mobile Chat Panel */}
-        <div className={`
+        <div
+          className={`
           md:hidden fixed inset-0 
           transition-transform duration-300 z-50
-          ${isMobileChatOpen ? 'translate-x-0' : 'translate-x-full'}
-        `}>
+          ${isMobileChatOpen ? "translate-x-0" : "translate-x-full"}
+        `}
+        >
           <div className="h-full w-full bg-white flex flex-col">
             <div className="h-14 border-b flex items-center justify-between px-4 bg-black text-white">
               <h2 className="font-medium">Chat</h2>
