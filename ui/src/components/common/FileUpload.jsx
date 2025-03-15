@@ -50,7 +50,7 @@ const FileUpload = ({ styles }) => {
 				action: "Select Example PDF",
 				label: title,
 			});
-			const response = await fetch(`${SERVER_URL}/uploads/${encodeURIComponent(url)}`);
+			const response = await fetch(`${SERVER_URL}/samples/${encodeURIComponent(url)}`);
 			const blob = await response.blob();
 			const file = new File([blob], title, { type: "application/pdf" });
 			setFile(file);
