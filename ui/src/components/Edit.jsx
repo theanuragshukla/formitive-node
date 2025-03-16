@@ -2,13 +2,13 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import WebViewer from "@pdftron/webviewer";
 import { EVENT_STATUS, REMOVE_BUTTONS, SERVER_URL } from "../constants";
-import { getUid } from "../utils";
 import ChatBox from "./common/ChatBox";
 import { X, MessageSquare, ChevronRight, ChevronLeft } from "lucide-react";
 import FeedbackPopup from "./common/FeedbackPopup";
 import { post_feedback } from "../data/managers/contact";
 import ReactGA from "react-ga4";
 import { connectSocket } from "../data/socket";
+import useEvents from "../hooks/useEvents";
 
 const Edit = () => {
   const viewer = useRef(null);
@@ -22,7 +22,7 @@ const Edit = () => {
   const { navRef, setHideNav } = useOutletContext();
   const navHeight = navRef?.current?.clientHeight || 0;
   const [feedbackOpen, setFeedbackOpen] = useState(false);
-  const [events, setEvents] = useState([]);
+  const { events, addEvent: handleEvent, updateEvent } = useEvents();
   const [status, setStatus] = useState({
     pdf_status: EVENT_STATUS.PENDING,
     json_status: EVENT_STATUS.PENDING,
@@ -30,37 +30,38 @@ const Edit = () => {
 
   const [formFields, setFormFields] = useState([]);
 
-  const handleEvent = (input) => {
-    const id = input.id || getUid();
-    setEvents((prev) => {
-      const exists = prev.find((event) => event.id === id);
-      if (exists)
-        return [...prev.filter((event) => event.id !== id), { id, ...input }];
-      else return [...prev, { id, ...input }];
-    });
-    return id;
-  };
+  const [updates, setUpdates] = useState([]);
 
-  const updateEvent = (id, data) => {
+  const handleAddEvent = async (input) => {
+    const id = handleEvent({
+      input: input,
+      status: EVENT_STATUS.LOADING,
+    });
     try {
-      setEvents((prev) =>
-        prev.map((event) => {
-          if (event.id === id) {
-            return { ...event, ...data };
-          }
-          return event;
-        })
-      );
+      const res = await fetch(`${SERVER_URL}/chat/${uid}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ msg: input }),
+      });
+      const { status, data, error } = await res.json();
+      if (status) {
+        const { updates } = JSON.parse(data);
+        const response = !!updates
+          ? updates.map(({ id, key, previous_data, data }) => {
+              return `${key} was updated from ${previous_data} to ${data}`;
+            })
+          : "No field can be updated";
+        setUpdates((prev) => [...prev, ...updates]);
+        updateEvent(id, { status: EVENT_STATUS.SUCCESS, output: response });
+      } else {
+        throw new Error(error);
+      }
     } catch (err) {
       console.error(err);
+      updateEvent(id, { status: EVENT_STATUS.FAILURE, error: err.message });
     }
-  };
-
-  const handleAddEvent = (input) => {
-    handleEvent({
-      input: input,
-      status: EVENT_STATUS.PENDING,
-    });
   };
 
   const loadDocument = async (uid) => {
@@ -126,6 +127,21 @@ const Edit = () => {
       };
       Annotations.WidgetAnnotation.getCustomStyles = customStyles;
     });
+
+  //   const fieldManager = documentViewer
+  //     .getAnnotationManager()
+  //     .getFieldManager();
+  //   const fields = fieldManager.getFields();
+  //   updates.forEach(({ id, data, key }) => {
+  //     const field = fields.find((field) => {
+  //       // const customData = field.widgets[0]?.getCustomData()
+  //       // console.log(">>>", customData);
+  //       // return customData?.id === id;
+  //     });
+  //     console.log(">>>", id, data, field);
+  //     if (!field) return;
+  //     field.setValue(data);
+  //   });
     setInstance(ins);
   };
 
@@ -170,40 +186,61 @@ const Edit = () => {
     );
   }, [instance]);
 
+  const handleStatusBoth = ({ pdf_status, json_status }) => {
+    console.log(">>>", pdf_status, json_status);
+    if (
+      pdf_status === EVENT_STATUS.FAILURE ||
+      json_status === EVENT_STATUS.FAILURE
+    ) {
+      navigate("/");
+      alert("Failed to parse the file. Please try again.");
+      return;
+    }
+    setStatus({ pdf_status, json_status });
+  };
+
+  const handleSocketStatus = ({ status, uid, type }) => {
+    console.log(">>>", status, type);
+    if (status === EVENT_STATUS.FAILURE) {
+      alert("Failed to parse the file. Please try again.");
+      navigate("/");
+      return;
+    }
+    setStatus((prev) => ({ ...prev, [type]: status }));
+  };
+
   useEffect(() => {
+    console.log(">>> Connecting to server", uid);
     const socket = connectSocket();
-    socket.on("connect", () => {
+
+    const handleConnect = () => {
+      console.log(">>> Connected to server");
       socket.emit("join", { uid });
-      socket.emit("get_status", { uid });
-    });
-    socket.on("update", ({ id, status, output, error }) => {
+    };
+
+    const handleUpdate = ({ id, status, output, error }) => {
       updateEvent(id, { status, output, error });
-    });
-    socket.on("status_both", ({ pdf_status, json_status }) => {
-      if (
-        pdf_status === EVENT_STATUS.FAILURE ||
-        json_status === EVENT_STATUS.FAILURE
-      ) {
-        navigate("/");
-        alert("Failed to parse the file. Please try again.");
-        return;
-      }
-      console.log(">>>", pdf_status, json_status);
-      setStatus({ pdf_status, json_status });
-    });
-    socket.on("status", ({ status, uid, type }) => {
-      if (status === EVENT_STATUS.FAILURE) {
-        alert("Failed to parse the file. Please try again.");
-        navigate("/");
-        return;
-      }
-      console.log(">>>", status, type);
-      setStatus((prev) => ({ ...prev, [type]: status }));
-    });
+    };
+
+    const handleDisconnect = () => {
+      console.log(">>> Disconnected from server");
+    };
+
+    socket.on("connect", handleConnect);
+    socket.on("update", handleUpdate);
+    socket.on("status_both", handleStatusBoth);
+    socket.on("status", handleSocketStatus);
+    socket.on("disconnect", handleDisconnect);
+
     return () => {
+      socket.off("connect", handleConnect);
+      socket.off("update", handleUpdate);
+      socket.off("status_both", handleStatusBoth);
+      socket.off("status", handleSocketStatus);
+      socket.off("disconnect", handleDisconnect);
       socket.disconnect();
     };
-  }, []);
+  }, [uid]);
 
   const fetchJSONData = async () => {
     const id = handleEvent({
@@ -264,7 +301,6 @@ const Edit = () => {
       });
     }
   };
-
   useEffect(() => {
     if (!uid) return;
     fetchJSONData();
@@ -283,12 +319,6 @@ const Edit = () => {
         .reduceRight((acc, page) => {
           return [...page, ...acc];
         }, [])
-        .sort((a, b) => {
-          return a.rect[1] - b.rect[1];
-        })
-        .sort((a, b) => {
-          return a.rect[0] - b.rect[0];
-        })
         .map((o) => {
           return { ...o, rect: o.rect.map((o) => Math.floor(o)) };
         });
@@ -296,20 +326,38 @@ const Edit = () => {
         .getAnnotationManager()
         .getFieldManager();
       const fields = fieldManager.getFields();
-      fields.forEach((field) => {
-        fieldManager.updateFieldName(
-          field,
-          allFields.find((o) => {
-            const [_x1, _y1, _x2, _y2] = o.rect.map((o) => Math.floor(o));
-            const [x1, y1, x2, y2] = Object.values(
-              field.widgets[0].getRect()
-            ).map((o) => Math.floor(o));
-            return x1 === _x1 && y1 === _y1 && x2 === _x2 && y2 === _y2;
-          })?.key || field.name
-        );
+      fields.forEach(async (field) => {
+        const match = allFields.find((o) => {
+          const [_x1, _y1, _x2, _y2] = o.rect.map((o) => Math.floor(o));
+          const [x1, y1, x2, y2] = Object.values(
+            field.widgets[0].getRect()
+          ).map((o) => Math.floor(o));
+          return x1 === _x1 && y1 === _y1 && x2 === _x2 && y2 === _y2;
+        });
+        fieldManager.updateFieldName(field, match?.key || field.name);
+        await field.widgets[0].setCustomData("id", match?.id || "");
       });
     });
   }, [instance, formFields, status]);
+
+  useEffect(() => {
+    if (!instance) return;
+    const { documentViewer } = instance.Core;
+    const fieldManager = documentViewer
+      .getAnnotationManager()
+      .getFieldManager();
+    const fields = fieldManager.getFields();
+    updates.forEach(({ id, data, key }) => {
+      const field = fields.filter((field) => {
+        /* const customData = field.widgets[0]?.getCustomData()
+        console.log(">>>", customData);
+        return customData?.id === id; */
+        return field.name === key;
+      })[0];
+      if (!field) return;
+      field.setValue(data);
+    });
+  }, [updates, instance]);
 
   useEffect(() => {
     async function init() {

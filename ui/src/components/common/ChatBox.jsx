@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 import React from "react";
 import { EVENT_STATUS } from "../../constants";
 import Spacer from "./Spacer";
-import { BadgeMinus, Check, Info, Loader} from "lucide-react";
+import { BadgeMinus, Check, Info, Loader } from "lucide-react";
 
 const renderStatusIcon = (status) => {
 	switch (status) {
@@ -65,33 +65,57 @@ const getAccentColor = (status) => {
 	}
 };
 
-const Event = ({ event: { input, output, status, error} }) => {
+const Event = ({ event: { input, output, status, error } }) => {
 	return (
 		<div
-			className={`bg-[#252525] p-2 rounded mb-4 shadow-lg border-l-2 ${getAccentColor(status)} transition-all duration-300 ease-in-out`}
+			className={`bg-[#252525] p-2 rounded mb-4 shadow-lg border-l-2 ${getAccentColor(
+				status
+			)} transition-all duration-300 ease-in-out`}
 		>
 			<div className="text-sm md:text-base text-white font-medium">{input}</div>
 			<Spacer size={2} />
 			{status !== EVENT_STATUS.SUCCESS && (
 				<div
-					className={`flex items-center py-1 px-2 rounded-md ${getStatusColor(status)}  shadow-md transition-all duration-300 ease-in-out`}
+					className={`flex items-center py-1 px-2 rounded-md ${getStatusColor(
+						status
+					)}  shadow-md transition-all duration-300 ease-in-out`}
 				>
 					{renderStatusIcon(status)}
-					<span className="font-medium text-sm">{getStatusMessage(status, error)}</span>
+					<span className="font-medium text-sm">
+						{getStatusMessage(status, error)}
+					</span>
 				</div>
 			)}
-
 			{status === EVENT_STATUS.SUCCESS && output && (
-				<div className="text-sm md:text-base px-2 text-gray-400 rounded-md">
-					{output}
+				<div className="mt-2 bg-gray-700 rounded-md p-3">
+					{Array.isArray(output) ? (
+						<ul className="text-sm md:text-base text-gray-300 list-disc pl-5 space-y-1">
+							{output.map((item, index) => (
+								<li key={index} className="leading-relaxed">
+									{item}
+								</li>
+							))}
+						</ul>
+					) : (
+						<p className="text-sm md:text-base text-gray-300">{output}</p>
+					)}
 				</div>
 			)}
 		</div>
 	);
 };
+
 export default function ChatBox({ events, handleSend }) {
 	const [inputMessage, setInputMessage] = useState("");
 	const hasUnsavedData = true;
+	const scrollRef = useRef();
+
+	// Auto-scroll to bottom when new events are added
+	useEffect(() => {
+		if (scrollRef.current) {
+			scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+		}
+	}, [events]);
 
 	useEffect(() => {
 		const handleBeforeUnload = (e) => {
@@ -120,10 +144,14 @@ export default function ChatBox({ events, handleSend }) {
 			handleSubmit(e);
 		}
 	};
+
 	return (
 		<div className=" md:order-2 w-full md:w-[330px] bg-black p-2 md:p-4 flex flex-col h-full relative border-l border-[#333333]">
 			<h2 className="text-lg font-medium">Document Events</h2>
-			<div className="flex-1 overflow-y-auto bg-[#121212] rounded p-1 md:p-2 mb-1 md:mb-2">
+			<div
+				ref={scrollRef}
+				className="flex-1 overflow-y-auto bg-[#121212] rounded p-1 md:p-2 mb-1 md:mb-2"
+			>
 				{events.map((event) => (
 					<Event key={event.id} event={event} />
 				))}
