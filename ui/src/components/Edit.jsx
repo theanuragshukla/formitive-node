@@ -23,6 +23,7 @@ const Edit = () => {
   const navHeight = navRef?.current?.clientHeight || 0;
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const { events, addEvent: handleEvent, updateEvent } = useEvents();
+  const [annotationsLoaded, setAnnotationsLoaded] = useState(false);
   const [status, setStatus] = useState({
     pdf_status: EVENT_STATUS.PENDING,
     json_status: EVENT_STATUS.PENDING,
@@ -128,20 +129,29 @@ const Edit = () => {
       Annotations.WidgetAnnotation.getCustomStyles = customStyles;
     });
 
-  //   const fieldManager = documentViewer
-  //     .getAnnotationManager()
-  //     .getFieldManager();
-  //   const fields = fieldManager.getFields();
-  //   updates.forEach(({ id, data, key }) => {
-  //     const field = fields.find((field) => {
-  //       // const customData = field.widgets[0]?.getCustomData()
-  //       // console.log(">>>", customData);
-  //       // return customData?.id === id;
-  //     });
-  //     console.log(">>>", id, data, field);
-  //     if (!field) return;
-  //     field.setValue(data);
-  //   });
+    documentViewer.addEventListener("annotationsLoaded", () => {
+      setAnnotationsLoaded(true);
+      const fieldManager = documentViewer
+        .getAnnotationManager()
+        .getFieldManager();
+      handleUpdateFieldName(fieldManager);
+    });
+
+    /* const fieldManager = documentViewer
+      .getAnnotationManager()
+      .getFieldManager();
+    const fields = fieldManager.getFields();
+    updates.forEach(({ id, data, key }) => {
+      const field = fields.find((field) => {
+        field.widgets.forEach(annot=>annot.loa)
+        // const customData = field.widgets[0]?.getCustomData()
+        // console.log(">>>", customData);
+        // return customData?.id === id;
+      });
+      console.log(">>>", id, data, field);
+      if (!field) return;
+      field.setValue(data);
+    }); */
     setInstance(ins);
   };
 
@@ -311,34 +321,51 @@ const Edit = () => {
     fetchFieldsData();
   }, [uid, status.json_status]);
 
+  const handleUpdateFieldName = async (fieldManager) => {
+    if (!formFields || formFields.length === 0) return;
+    const allFields = formFields
+      .reduceRight((acc, page) => {
+        return [...page, ...acc];
+      }, [])
+      .map((o) => {
+        return { ...o, rect: o.rect.map((o) => Math.floor(o)) };
+      });
+
+    const fields = fieldManager.getFields();
+
+    // Define a tolerance for coordinate comparison
+    const tolerance = 20; // Adjust this value as needed
+    fields.forEach(async (field) => {
+      const fieldRect = field.widgets[0].getRect();
+      const [x1, y1, x2, y2] = Object.values(fieldRect).map((o) =>
+        Math.floor(o)
+      );
+
+      const match = allFields.find((o) => {
+        const [rectX1, rectY1, rectX2, rectY2] = o.rect;
+
+        // Check if the coordinates are within the tolerance range
+        return (
+          Math.abs(x1 - rectX1) <= tolerance &&
+          Math.abs(y1 - rectY1) <= tolerance &&
+          Math.abs(x2 - rectX2) <= tolerance &&
+          Math.abs(y2 - rectY2) <= tolerance
+        );
+      });
+      fieldManager.updateFieldName(field, match?.key || field.name);
+      await field.widgets[0].setCustomData("id", match?.id || "");
+    });
+  };
+
   useEffect(() => {
-    if (!instance) return;
+    if (!instance || !annotationsLoaded || status.json_status !== "SUCCESS") return;
     const { documentViewer } = instance.Core;
-    documentViewer.addEventListener("annotationsLoaded", () => {
-      const allFields = formFields
-        .reduceRight((acc, page) => {
-          return [...page, ...acc];
-        }, [])
-        .map((o) => {
-          return { ...o, rect: o.rect.map((o) => Math.floor(o)) };
-        });
       const fieldManager = documentViewer
         .getAnnotationManager()
         .getFieldManager();
-      const fields = fieldManager.getFields();
-      fields.forEach(async (field) => {
-        const match = allFields.find((o) => {
-          const [_x1, _y1, _x2, _y2] = o.rect.map((o) => Math.floor(o));
-          const [x1, y1, x2, y2] = Object.values(
-            field.widgets[0].getRect()
-          ).map((o) => Math.floor(o));
-          return x1 === _x1 && y1 === _y1 && x2 === _x2 && y2 === _y2;
-        });
-        fieldManager.updateFieldName(field, match?.key || field.name);
-        await field.widgets[0].setCustomData("id", match?.id || "");
-      });
-    });
-  }, [instance, formFields, status]);
+      handleUpdateFieldName(fieldManager);
+    
+  }, [instance, formFields, status, annotationsLoaded]);
 
   useEffect(() => {
     if (!instance) return;
@@ -413,7 +440,7 @@ const Edit = () => {
               }`}
             >
               {!isChatCollapsed && (
-                <ChatBox events={events} handleSend={handleAddEvent} />
+              <ChatBox events={events} handleSend={handleAddEvent} isDisabled={!annotationsLoaded || !formFields.length} isLoading={!!events.find(o=>[EVENT_STATUS.LOADING, EVENT_STATUS.PENDING].includes(o.status))} />
               )}
             </div>
           </div>
@@ -438,7 +465,7 @@ const Edit = () => {
               </button>
             </div>
             <div className="flex-1 overflow-hidden">
-              <ChatBox events={events} handleSend={handleAddEvent} />
+              <ChatBox events={events} handleSend={handleAddEvent} isDisabled={!annotationsLoaded || !formFields.length} isLoading={events[events.some(o=>[EVENT_STATUS.LOADING, EVENT_STATUS.PENDING].includes(o.status))]} />
             </div>
           </div>
         </div>

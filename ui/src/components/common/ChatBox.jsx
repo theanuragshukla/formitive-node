@@ -105,7 +105,7 @@ const Event = ({ event: { input, output, status, error } }) => {
 	);
 };
 
-export default function ChatBox({ events, handleSend }) {
+export default function ChatBox({ events, handleSend, isDisabled, isLoading }) {
 	const [inputMessage, setInputMessage] = useState("");
 	const hasUnsavedData = true;
 	const scrollRef = useRef();
@@ -146,7 +146,7 @@ export default function ChatBox({ events, handleSend }) {
 	};
 
 	return (
-		<div className=" md:order-2 w-full md:w-[330px] bg-black p-2 md:p-4 flex flex-col h-full relative border-l border-[#333333]">
+		<div className="md:order-2 w-full md:w-[330px] bg-black p-2 md:p-4 flex flex-col h-full relative border-l border-[#333333]">
 			<h2 className="text-lg font-medium">Document Events</h2>
 			<div
 				ref={scrollRef}
@@ -157,18 +157,28 @@ export default function ChatBox({ events, handleSend }) {
 				))}
 			</div>
 			<form onSubmit={handleSubmit} className="flex flex-col gap-1 md:gap-2">
-				<textarea
-					value={inputMessage}
-					onChange={(e) => setInputMessage(e.target.value)}
-					onKeyDown={handleKeyDown}
-					placeholder="Enter data to fill into the document, e.g. John Smith DOB 1/2/88"
-					className="h-16 md:h-24 p-2 text-sm md:text-base bg-[#252525] text-white rounded resize-none"
-				/>
+				{isDisabled ? (
+					<div className="h-16 md:h-24 p-2 text-sm md:text-base bg-[#252525] text-gray-500 rounded flex items-center justify-center">
+						Please wait while we fetch required data from the server
+					</div>
+				) : (
+					<textarea
+						value={inputMessage}
+						onChange={(e) => setInputMessage(e.target.value)}
+						onKeyDown={handleKeyDown}
+						placeholder="Enter data to fill into the document, e.g. John Smith DOB 1/2/88"
+						className="h-16 md:h-24 p-2 text-sm md:text-base bg-[#252525] text-white rounded resize-none"
+						disabled={isLoading}
+					/>
+				)}
 				<button
 					type="submit"
-					className="py-1 md:py-2 bg-[#252525] text-white rounded cursor-pointer text-sm md:text-base"
+					className={`py-1 md:py-2 bg-[#252525] text-white rounded cursor-pointer text-sm md:text-base ${
+						isDisabled || isLoading ? "cursor-not-allowed opacity-50" : ""
+					}`}
+					disabled={isDisabled || isLoading}
 				>
-					Send
+					{isLoading ? "Loading..." : "Send"}
 				</button>
 			</form>
 		</div>
