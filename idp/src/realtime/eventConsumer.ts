@@ -23,11 +23,11 @@ const eventConsumer = (socket: Socket) => {
           if (!uid) continue;
           
           await updateStatus(uid, "json_status", "IN_PROGRESS");
-          const data = await downloadAndGenerateJson(uid);
-          await updateStatus(uid, "json_status", data ? "SUCCESS" : "FAILURE");
+          const generated = await downloadAndGenerateJson(uid);
+          await updateStatus(uid, "json_status", generated ? "SUCCESS" : "FAILURE");
           socket.emit("status_update_from_idp", { 
             uid, 
-            status: "SUCCESS", 
+            status: generated ? "SUCCESS" : "FAILURE", 
             type: "json_status" 
           });
         } catch (error) {

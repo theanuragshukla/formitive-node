@@ -4,6 +4,7 @@ import path from 'path';
 import { UPLOAD_FOLDER } from '../constants';
 
 
+const SERVER_URL = process.env.SOCKET_SERVER || 'http://localhost:5000';
 async function getPdfFromUrl(uuid: string): Promise<string> {
   try {
     console.log(`Downloading UUID: ${uuid}`);
@@ -17,7 +18,7 @@ async function getPdfFromUrl(uuid: string): Promise<string> {
     
     const response = await axios({
       method: 'GET',
-      url: `http://localhost:5000/uploads/${uuid}.pdf`,
+      url: `${SERVER_URL}/uploads/${uuid}.pdf`,
       responseType: 'arraybuffer',
       timeout: 30000,
       headers: {
