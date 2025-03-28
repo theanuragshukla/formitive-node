@@ -1,23 +1,27 @@
-FROM alpine
-
-RUN apk add nodejs npm 
+FROM node:18-slim
 
 ARG PORT
 ARG PG_URI
 ARG REDIS_URI
+ARG SOCKET_SERVER
+ARG APRYSE_LICENSE_KEY
 
 ENV PORT $PORT
 ENV PG_URI $PG_URI
 ENV REDIS_URI $REDIS_URI
+ENV SOCKET_SERVER $SOCKET_SERVER
+ENV APRYSE_LICENSE_KEY $APRYSE_LICENSE_KEY
 
 WORKDIR /app
 
-COPY package*.json .
 RUN npm i -g typescript
-RUN npm ci
+
+COPY package*.json .
+
+RUN npm install
 
 COPY . .
 
 EXPOSE 8000
 
-CMD [ "npm" , "start" ]
+CMD ["npm", "run", "start"]
