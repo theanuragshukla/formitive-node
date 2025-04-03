@@ -5,6 +5,12 @@ class RedisClient {
   constructor() {
     this.client = redis.createClient({
       url: process.env.REDIS_URI || "redis://localhost:6379",
+      socket: {
+         reconnectStrategy: (retries) => {
+          console.log(`Reconnecting attempt #${retries}`);
+          return Math.min(retries * 500, 5000);
+        },
+      }
     });
     this.client
       .connect()
