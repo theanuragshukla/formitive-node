@@ -5,12 +5,36 @@ import { UPLOAD_FOLDER } from '../constants';
 import getPdfFromUrl from './getPdfFromUrl';
 import parseKv from './parseKv';
 
-export async function downloadAndGenerateJson(uuid: string): Promise<boolean> {
+export const downloadPDF = async (uuid: string): Promise<boolean> => {
   try {
     await getPdfFromUrl(uuid);
-    return generateJson(uuid);
+    return true;
   } catch (error) {
-    console.error(`Failed to download and process PDF: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(`Failed to download PDF: ${error instanceof Error ? error.message : String(error)}`);
+    return false;
+  }
+}
+
+export async function generatePdf(uuid: string): Promise<boolean> {
+  try {
+    console.log(`Generating PDF for ${uuid}`);
+    const basePath = path.join(process.cwd(), UPLOAD_FOLDER);
+    const fname = path.join(basePath, `${uuid}.pdf`);
+    const outPdf = path.join(basePath, `${uuid}_out.pdf`);
+    const outJson = path.join(basePath, `${uuid}.json`);
+    console.log(`PDF: ${fname}`);
+    console.log(`JSON: ${outJson}`);
+    console.log(`OUT PDF: ${outPdf}`);
+    console.debug("Extracting Coords for form fields");
+    await PDFNet.DataExtractionModule.extractData(fname, outJson, PDFNet.DataExtractionModule.DataExtractionEngine.e_Form)
+    const doc = await PDFNet.PDFDoc.createFromFilePath(fname);
+    await PDFNet.DataExtractionModule.detectAndAddFormFieldsToPDF(doc)
+    doc.save(outPdf, PDFNet.SDFDoc.SaveOptions.e_linearized)
+    console.info(`PDF generated for ${uuid}`);
+    return true;
+  } catch (e) {
+    console.log(JSON.stringify(e));
+    console.error(`Error generating PDF: ${e instanceof Error ? e.message : String(e)}`);
     return false;
   }
 }

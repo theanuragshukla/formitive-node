@@ -2,26 +2,25 @@ import express from "express";
 import dotenv from "dotenv";
 const app = express();
 import appSetup from "./startup/init";
-import eventConsumer from "./realtime/eventConsumer";
-import io from 'socket.io-client'
+import {pdfConsumer, jsonConsumer} from "./realtime/eventConsumer";
 import { PDFNet } from "@pdftron/pdfnet-node";
 import routerSetup from "./startup/router";
+import securitySetup from "./startup/security";
+import SocketIO from './realtime/setup'
 
 
 dotenv.config();
 
 const { APRYSE_LICENSE_KEY } = process.env
-const SOCKET_SERVER = process.env.SOCKET_SERVER || 'http://localhost:5000'
 
 const init = async () => {
-  await appSetup(app);
+  securitySetup(app, express);
   routerSetup(app);
+  const server = await appSetup(app);
+  const io = SocketIO.getInstance(server)
   await PDFNet.initialize(APRYSE_LICENSE_KEY);
-  const socket = io(SOCKET_SERVER)
-  socket.on('connect', () => {
-    console.log('Connected to server')
-    eventConsumer(socket)
-  })
+  jsonConsumer(io.io)
+  pdfConsumer(io.io)
 };
 
 init()
