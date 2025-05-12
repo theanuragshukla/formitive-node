@@ -1,0 +1,63 @@
+[workflows]
+runButton = "reset and pull changes"
+
+[[workflows.workflow]]
+name = "dev"
+mode = "parallel"
+author = 7826208
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd ui && npm start"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd idp && npm run dev"
+
+[[workflows.workflow]]
+name = "setup"
+mode = "parallel"
+author = 7826208
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd ui && npm install"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd idp && npm install"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "git config --global user.email \"replit@anurags.dev\" && git config --global user.name \"Anurag Shukla\""
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "git config pull.rebase false"
+
+[[workflows.workflow]]
+name = "fetch latest changes"
+mode = "sequential"
+author = 7826208
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "git config --global user.email \"replit@anurags.dev\" && git config --global user.name \"Anurag Shukla\" && git pull origin main"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = ""
+
+[[workflows.workflow]]
+name = "reset and pull changes"
+mode = "sequential"
+author = 7826208
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "git reset HEAD --hard"
+
+[[workflows.workflow.tasks]]
+args = "git config --global user.email \"replit@anurags.dev\" && git config --global user.name \"Anurag Shukla\" && git pull origin main"
+task = "shell.exec"
+
