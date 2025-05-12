@@ -1,5 +1,6 @@
+modules = ["nodejs-20"]
 [workflows]
-runButton = "reset and pull changes"
+runButton = "dev"
 
 [[workflows.workflow]]
 name = "dev"
